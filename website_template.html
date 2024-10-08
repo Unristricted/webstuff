@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@2.18.0/dist/full.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+        }
+        /* Highlight selected row */
+        .selected-row {
+            background-color: #34d399; /* Green-400 for selected rows */
+            color: white;
+        }
+        /* Adjust the collapse button styling */
+        #collapse-btn {
+            top: 0.75rem;
+            left: 0.75rem;
+        }
+        /* Hide sidebar content when collapsed */
+        .collapsed .sidebar-content {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen">
+    <!-- Top Bar with Buttons -->
+    <div class="p-4 bg-white shadow-md flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Document Viewer</h1>
+        <div class="space-x-2">
+            <button class="btn btn-outline btn-primary">Split</button>
+            <button class="btn btn-outline btn-secondary">Combine</button>
+        </div>
+    </div>
+
+    <div class="flex h-[calc(100%-64px)]">
+        <!-- Collapsible Sidebar -->
+        <div id="sidebar" class="relative transition-all duration-300 w-1/4 bg-gray-800 p-4 text-white space-y-4">
+            <button id="collapse-btn" class="btn btn-square btn-sm absolute text-white bg-gray-700">
+                <!-- Icon for collapse -->
+                <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <!-- Sidebar Content -->
+            <div class="sidebar-content">
+                <h2 class="text-xl font-bold mb-4">Document Selector</h2>
+                
+                <!-- Document Selection -->
+                <div>
+                    <label class="block mb-2 text-sm">Select Document</label>
+                    <select class="select select-bordered w-full max-w-xs bg-white text-black">
+                        <option disabled selected>Choose Document</option>
+                        <option>Document 1</option>
+                        <option>Document 2</option>
+                    </select>
+                </div>
+
+                <!-- Start and End Pages -->
+                <div class="mt-4">
+                    <label class="block mb-2 text-sm">Start Page</label>
+                    <input type="number" class="input input-bordered w-full max-w-xs bg-white text-black" placeholder="Enter Start Page">
+                </div>
+
+                <div class="mt-4">
+                    <label class="block mb-2 text-sm">End Page</label>
+                    <input type="number" class="input input-bordered w-full max-w-xs bg-white text-black" placeholder="Enter End Page">
+                </div>
+
+                <!-- Submit Button -->
+                <button class="btn btn-primary mt-4 w-full">Load Document</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="transition-all duration-300 w-3/4 flex flex-col p-4">
+            <div class="flex w-full h-full">
+                <!-- Left Column: Table -->
+                <div class="w-1/2 p-4 bg-white shadow-md mr-2 overflow-auto">
+                    <h2 class="text-xl font-bold mb-4">Select Rows</h2>
+                    <table class="table w-full">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Row Item</th>
+                                <th>Page Number</th> <!-- New Page Number Column -->
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr>
+                                <th>1</th>
+                                <td>Item 1</td>
+                                <td>1</td> <!-- Example Page Number -->
+                            </tr>
+                            <tr>
+                                <th>2</th>
+                                <td>Item 2</td>
+                                <td>2</td> <!-- Example Page Number -->
+                            </tr>
+                            <tr>
+                                <th>3</th>
+                                <td>Item 3</td>
+                                <td>3</td> <!-- Example Page Number -->
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Right Column: PDF Embed -->
+                <div class="w-1/2 p-4 bg-white shadow-md ml-2">
+                    <h2 class="text-xl font-bold mb-4">PDF Viewer</h2>
+                    <iframe src="your-pdf-file-url.pdf" frameborder="0" id="pdf-viewer"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const collapseBtn = document.getElementById("collapse-btn");
+        const sidebar = document.getElementById("sidebar");
+        const mainContent = document.getElementById("main-content");
+        const collapseIcon = document.getElementById("collapse-icon");
+
+        let isCollapsed = false;
+
+        collapseBtn.addEventListener("click", function () {
+            isCollapsed = !isCollapsed;
+
+            if (isCollapsed) {
+                sidebar.classList.replace("w-1/4", "w-0");
+                mainContent.classList.replace("w-3/4", "w-full");
+
+                // Hide sidebar content
+                sidebar.classList.add("collapsed");
+
+                // Change collapse icon to ">" (right arrow)
+                collapseIcon.setAttribute("d", "M9 5l7 7-7 7");
+            } else {
+                sidebar.classList.replace("w-0", "w-1/4");
+                mainContent.classList.replace("w-full", "w-3/4");
+
+                // Show sidebar content
+                sidebar.classList.remove("collapsed");
+
+                // Change collapse icon to "<" (left arrow)
+                collapseIcon.setAttribute("d", "M15 19l-7-7 7-7");
+            }
+        });
+
+        // Array to hold selected rows
+        let selectedRows = [];
+
+        // Function to handle row selection
+        const rows = document.querySelectorAll("#table-body tr");
+
+        rows.forEach((row) => {
+            row.addEventListener("click", function () {
+                const rowIndex = this.querySelector("th").innerText;
+                const rowItem = this.querySelector("td").innerText;
+                const pageNumber = this.querySelectorAll("td")[1].innerText;
+
+                // Check if the row is already selected
+                if (this.classList.contains("selected-row")) {
+                    // Deselect the row
+                    this.classList.remove("selected-row");
+                    
+                    // Remove from selected rows array
+                    selectedRows = selectedRows.filter(item => item.index !== rowIndex);
+                } else {
+                    // Select the row
+                    this.classList.add("selected-row");
+
+                    // Add to selected rows array
+                    selectedRows.push({
+                        index: rowIndex,
+                        item: rowItem,
+                        pageNumber: pageNumber
+                    });
+                }
+
+                console.log("Selected Rows:", selectedRows);
+
+                // Example action: Show the selected page of the last clicked row in the PDF viewer
+                if (selectedRows.length > 0) {
+                    const lastSelectedPage = selectedRows[selectedRows.length - 1].pageNumber;
+                    document.getElementById('pdf-viewer').src = `your-pdf-file-url.pdf#page=${lastSelectedPage}`; 
+                }
+            });
+        });
+    </script>
+</body>
+</html>
